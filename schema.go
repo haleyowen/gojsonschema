@@ -54,7 +54,7 @@ func NewSchema(l JSONLoader, evaluator ExpressionEvaluator) (*Schema, error) {
 // Schema holds a schema
 type Schema struct {
 	documentReference gojsonreference.JsonReference
-	rootSchema        *subSchema
+	rootSchema        *SubSchema
 	pool              *schemaPool
 	referencePool     *schemaReferencePool
 }
@@ -71,13 +71,17 @@ func (d *Schema) SetRootSchemaName(name string) {
 	d.rootSchema.property = name
 }
 
+func (d *Schema) Root() *SubSchema {
+	return d.rootSchema
+}
+
 // Parses a subSchema
 //
 // Pretty long function ( sorry :) )... but pretty straight forward, repetitive and boring
 // Not much magic involved here, most of the job is to validate the key names and their values,
 // then the values are copied into subSchema struct
 //
-func (d *Schema) parseSchema(documentNode interface{}, currentSchema *subSchema) error {
+func (d *Schema) parseSchema(documentNode interface{}, currentSchema *SubSchema) error {
 
 	if currentSchema.draft == nil {
 		if currentSchema.parent == nil {
@@ -380,7 +384,7 @@ func (d *Schema) parseSchema(documentNode interface{}, currentSchema *subSchema)
 			}
 
 			if len(patternPropertiesMap) > 0 {
-				currentSchema.patternProperties = make(map[string]*subSchema)
+				currentSchema.patternProperties = make(map[string]*SubSchema)
 				for k, v := range patternPropertiesMap {
 					_, err := regexp.MatchString(k, "")
 					if err != nil {
@@ -1042,7 +1046,7 @@ func (d *Schema) parseSchema(documentNode interface{}, currentSchema *subSchema)
 	return nil
 }
 
-func (d *Schema) parseReference(documentNode interface{}, currentSchema *subSchema) error {
+func (d *Schema) parseReference(documentNode interface{}, currentSchema *SubSchema) error {
 	var (
 		refdDocumentNode interface{}
 		dsp              *schemaPoolDocument
@@ -1084,7 +1088,7 @@ func (d *Schema) parseReference(documentNode interface{}, currentSchema *subSche
 
 }
 
-func (d *Schema) parseProperties(documentNode interface{}, currentSchema *subSchema) error {
+func (d *Schema) parseProperties(documentNode interface{}, currentSchema *SubSchema) error {
 
 	m, err := mustBeMap(documentNode)
 	if err != nil {
@@ -1104,7 +1108,7 @@ func (d *Schema) parseProperties(documentNode interface{}, currentSchema *subSch
 	return nil
 }
 
-func (d *Schema) parseDependencies(documentNode interface{}, currentSchema *subSchema) error {
+func (d *Schema) parseDependencies(documentNode interface{}, currentSchema *SubSchema) error {
 
 	m, err := mustBeMap(documentNode)
 	if err != nil {
