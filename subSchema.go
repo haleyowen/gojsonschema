@@ -92,8 +92,8 @@ type SubSchema struct {
 	property string
 
 	// Types associated with the subSchema
-	types *jsonSchemaType
-	bsonTypes *jsonSchemaType
+	types *JsonSchemaType
+	bsonTypes *JsonSchemaType
 
 	// Reference url
 	ref *gojsonreference.JsonReference
@@ -171,20 +171,44 @@ func NewSubSchema(property string, parentSubSchema *SubSchema) *SubSchema {
 	return newSchema
 }
 
-func (s *SubSchema) Properties() []*SubSchema {
-	return s.propertiesChildren
+func (s *SubSchema) Title() *string {
+	return s.title
+}
+
+func (s *SubSchema) Description() *string {
+	return s.description
 }
 
 func (s *SubSchema) Name() string {
 	return s.property
 }
 
-func (s *SubSchema) Enum() []string {
-	return s.enum
+func (s *SubSchema) Types() *JsonSchemaType {
+	return s.types
 }
 
-func (s *SubSchema) Title() *string {
-	return s.title
+func (s *SubSchema) BSONTypes() *JsonSchemaType {
+	return s.bsonTypes
+}
+
+func (s *SubSchema) Ref() *gojsonreference.JsonReference {
+	return s.ref
+}
+
+func (s *SubSchema) RefSchema() *SubSchema {
+	return s.refSchema
+}
+
+func (s *SubSchema) Parent() *SubSchema {
+	return s.parent
+}
+
+func (s *SubSchema) Properties() []*SubSchema {
+	return s.propertiesChildren
+}
+
+func (s *SubSchema) Enum() []string {
+	return s.enum
 }
 
 func (s *SubSchema) Required() []string {
