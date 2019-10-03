@@ -81,7 +81,7 @@ const (
 	KEY_VALIDATE 			  = "validate"
 )
 
-type subSchema struct {
+type SubSchema struct {
 	draft *Draft
 
 	// basic subSchema meta properties
@@ -98,13 +98,13 @@ type subSchema struct {
 	// Reference url
 	ref *gojsonreference.JsonReference
 	// Schema referenced
-	refSchema *subSchema
+	refSchema *SubSchema
 
 	// hierarchy
-	parent                      *subSchema
-	itemsChildren               []*subSchema
+	parent                      *SubSchema
+	itemsChildren               []*SubSchema
 	itemsChildrenIsSingleSchema bool
-	propertiesChildren          []*subSchema
+	propertiesChildren          []*SubSchema
 
 	// validation : number / integer
 	multipleOf       *big.Rat
@@ -126,14 +126,14 @@ type subSchema struct {
 
 	dependencies         map[string]interface{}
 	additionalProperties interface{}
-	patternProperties    map[string]*subSchema
-	propertyNames        *subSchema
+	patternProperties    map[string]*SubSchema
+	propertyNames        *SubSchema
 
 	// validation : array
 	minItems    *int
 	maxItems    *int
 	uniqueItems bool
-	contains    *subSchema
+	contains    *SubSchema
 
 	additionalItems interface{}
 
@@ -142,21 +142,21 @@ type subSchema struct {
 	enum   []string
 
 	// validation : subSchema
-	oneOf []*subSchema
-	anyOf []*subSchema
-	allOf []*subSchema
-	not   *subSchema
-	_if   *subSchema // if/else are golang keywords
-	_then *subSchema
-	_else *subSchema
+	oneOf []*SubSchema
+	anyOf []*SubSchema
+	allOf []*SubSchema
+	not   *SubSchema
+	_if   *SubSchema // if/else are golang keywords
+	_then *SubSchema
+	_else *SubSchema
 
 	expression interface{}
 	fieldPath  *[]string
 	evaluator  ExpressionEvaluator
 }
 
-func NewSubSchema(property string, parentSubSchema *subSchema) *subSchema {
-	newSchema := &subSchema{
+func NewSubSchema(property string, parentSubSchema *SubSchema) *SubSchema {
+	newSchema := &SubSchema{
 		property:  property,
 		types:     NewJsonSchemaType(JSON_TYPES),
 		bsonTypes: NewJsonSchemaType(BSON_TYPES),
@@ -171,7 +171,43 @@ func NewSubSchema(property string, parentSubSchema *subSchema) *subSchema {
 	return newSchema
 }
 
-func (s *subSchema) AddConst(i interface{}) error {
+func (s *SubSchema) Properties() []*SubSchema {
+	return s.propertiesChildren
+}
+
+func (s *SubSchema) Name() string {
+	return s.property
+}
+
+func (s *SubSchema) Enum() []string {
+	return s.enum
+}
+
+func (s *SubSchema) Title() *string {
+	return s.title
+}
+
+func (s *SubSchema) Required() []string {
+	return s.required
+}
+
+
+func (s *SubSchema) Type() *string {
+	if s.types != nil && s.types.IsTyped() {
+		x := s.types.String()
+		return &x
+	}
+
+	if s.bsonTypes != nil && s.bsonTypes.IsTyped() {
+		x := s.bsonTypes.String()
+		return &x
+	}
+
+	return nil
+}
+
+
+func (s *SubSchema) AddConst(i interface{}) error {
 
 	is, err := marshalWithoutNumber(i)
 	if err != nil {
@@ -181,7 +217,7 @@ func (s *subSchema) AddConst(i interface{}) error {
 	return nil
 }
 
-func (s *subSchema) AddEnum(i interface{}) error {
+func (s *SubSchema) AddEnum(i interface{}) error {
 
 	is, err := marshalWithoutNumber(i)
 	if err != nil {
@@ -200,7 +236,7 @@ func (s *subSchema) AddEnum(i interface{}) error {
 	return nil
 }
 
-func (s *subSchema) ContainsEnum(i interface{}) (bool, error) {
+func (s *SubSchema) ContainsEnum(i interface{}) (bool, error) {
 
 	is, err := marshalWithoutNumber(i)
 	if err != nil {
@@ -210,35 +246,35 @@ func (s *subSchema) ContainsEnum(i interface{}) (bool, error) {
 	return isStringInSlice(s.enum, *is), nil
 }
 
-func (s *subSchema) AddOneOf(subSchema *subSchema) {
+func (s *SubSchema) AddOneOf(subSchema *SubSchema) {
 	s.oneOf = append(s.oneOf, subSchema)
 }
 
-func (s *subSchema) AddAllOf(subSchema *subSchema) {
+func (s *SubSchema) AddAllOf(subSchema *SubSchema) {
 	s.allOf = append(s.allOf, subSchema)
 }
 
-func (s *subSchema) AddAnyOf(subSchema *subSchema) {
+func (s *SubSchema) AddAnyOf(subSchema *SubSchema) {
 	s.anyOf = append(s.anyOf, subSchema)
 }
 
-func (s *subSchema) SetNot(subSchema *subSchema) {
+func (s *SubSchema) SetNot(subSchema *SubSchema) {
 	s.not = subSchema
 }
 
-func (s *subSchema) SetIf(subSchema *subSchema) {
+func (s *SubSchema) SetIf(subSchema *SubSchema) {
 	s._if = subSchema
 }
 
-func (s *subSchema) SetThen(subSchema *subSchema) {
+func (s *SubSchema) SetThen(subSchema *SubSchema) {
 	s._then = subSchema
 }
 
-func (s *subSchema) SetElse(subSchema *subSchema) {
+func (s *SubSchema) SetElse(subSchema *SubSchema) {
 	s._else = subSchema
 }
 
-func (s *subSchema) AddRequired(value string) error {
+func (s *SubSchema) AddRequired(value string) error {
 
 	if isStringInSlice(s.required, value) {
 		return errors.New(formatErrorDescription(
@@ -252,15 +288,15 @@ func (s *subSchema) AddRequired(value string) error {
 	return nil
 }
 
-func (s *subSchema) AddItemsChild(child *subSchema) {
+func (s *SubSchema) AddItemsChild(child *SubSchema) {
 	s.itemsChildren = append(s.itemsChildren, child)
 }
 
-func (s *subSchema) AddPropertiesChild(child *subSchema) {
+func (s *SubSchema) AddPropertiesChild(child *SubSchema) {
 	s.propertiesChildren = append(s.propertiesChildren, child)
 }
 
-func (s *subSchema) PatternPropertiesString() string {
+func (s *SubSchema) PatternPropertiesString() string {
 
 	if s.patternProperties == nil || len(s.patternProperties) == 0 {
 		return STRING_UNDEFINED // should never happen
